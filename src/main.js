@@ -1,8 +1,7 @@
 import './styles.css';
 
 const TIKTOK_AUTH = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-auth/authorize';
-const TIKTOK_POST = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-post2';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_G7fRcb2SODd5IXV96mGlYw_HVjSEnZw';
+const TIKTOK_POST = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-post-public';
 
 const accounts = [
   { platform: 'TikTok', handle: '@rafdon19', role: 'Primary growth + affiliate', id: '23202e30-c24f-478d-a97f-06cd7e21e029' },
@@ -11,117 +10,15 @@ const accounts = [
   { platform: 'Instagram', handle: '@mofarozi', role: 'Distribution + personal brand' },
   { platform: 'Facebook', handle: 'mofaizor', role: 'Distribution' },
 ];
-
-const api = async (body) => {
-  const r = await fetch(TIKTOK_POST, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` },
-    body: JSON.stringify(body),
-  });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok || data.ok === false) throw new Error(data.error?.message || data.error || 'TikTok request failed');
-  return data;
-};
-
-const accountCard = (a) => {
-  const connect = a.platform === 'TikTok'
-    ? `<a class="button" href="${TIKTOK_AUTH}?account_id=${encodeURIComponent(a.id)}">Connect TikTok</a>`
-    : `<button disabled>Coming after TikTok foundation</button>`;
-  return `<div class="account-row"><div><b>${a.handle}</b><span>${a.platform} · ${a.role}</span></div>${connect}</div>`;
-};
-
-const app = document.querySelector('#app');
-app.innerHTML = `
-  <main class="shell">
-    <header class="topbar">
-      <div><span class="eyebrow">RAFDON AI</span><h1>Creator Revenue OS</h1><p>One command center for content, audience, LIVE and affiliate growth.</p></div>
-      <div class="status"><span></span> Foundation online</div>
-    </header>
-    <section class="hero-grid">
-      <article class="hero"><span class="label">MASTER AGENT</span><h2>Observe → Analyze → Experiment → Learn</h2><p>Official platform data flows into one measurement and decision layer. Tokens stay server-side and are never exposed to the browser.</p></article>
-      <article class="card"><h3>Your accounts</h3>${accounts.map(accountCard).join('')}</article>
-    </section>
-    <section class="metrics">
-      ${[['Views','—'],['Followers','—'],['Engagement','—'],['Affiliate revenue','—']].map(([k,v])=>`<article class="metric"><span>${k}</span><strong>${v}</strong><small>Waiting for authorized platform sync</small></article>`).join('')}
-    </section>
-    <section class="card tiktok-publisher" id="tiktok-publisher">
-      <div class="publisher-head"><div><span class="label">TIKTOK CONTENT POSTING</span><h2>Post or upload a video to TikTok</h2><p>RAFDON AI sends the selected video only after you explicitly consent.</p></div><span id="tiktok-status" class="pill">Checking TikTok…</span></div>
-      <div id="creator-card" class="creator-card hidden"></div>
-      <div class="publisher-grid">
-        <div><label>Video file</label><input id="video-file" type="file" accept="video/mp4,video/quicktime,video/webm" /><small id="video-meta">Select an MP4, MOV or WebM video.</small></div>
-        <div><label>Caption / title</label><textarea id="video-title" rows="3" maxlength="2200" placeholder="Write your TikTok caption…"></textarea></div>
-        <div><label>Privacy status <span class="required">required</span></label><select id="privacy"><option value="">Select privacy status</option></select></div>
-        <div><label>Interaction settings</label><div class="checks"><label><input id="allow-comment" type="checkbox" /> Allow comments</label><label><input id="allow-duet" type="checkbox" /> Allow Duet</label><label><input id="allow-stitch" type="checkbox" /> Allow Stitch</label></div></div>
-        <div class="disclosure"><label><input id="commercial" type="checkbox" /> This content promotes my own business or another brand</label><div id="commercial-options" class="checks hidden"><label><input id="brand-organic" type="checkbox" /> Your brand / own business</label><label><input id="brand-content" type="checkbox" /> Branded content / third party</label></div></div>
-      </div>
-      <div class="consent"><label><input id="consent" type="checkbox" /> By posting, you agree to TikTok's Music Usage Confirmation.</label></div>
-      <div class="publisher-actions"><button id="refresh-creator" class="button secondary">Refresh TikTok account</button><button id="upload-draft" class="button secondary">Upload draft to TikTok</button><button id="publish-direct" class="button primary">Publish to TikTok</button></div>
-      <div id="publish-progress" class="progress" aria-live="polite"></div>
-    </section>
-    <section class="grid">
-      <article class="card"><h3>Content Intelligence</h3><p>Winning hooks, retention patterns, saves, shares, comments, follows and experiment results.</p><button disabled>Awaiting data</button></article>
-      <article class="card"><h3>Affiliate Engine</h3><p>Products → clicks → orders → commission → revenue attribution.</p><button disabled>Awaiting data</button></article>
-      <article class="card"><h3>LIVE Copilot</h3><p>Live-ready product priorities, audience questions and host recommendations where permitted data is available.</p><button disabled>Awaiting data</button></article>
-      <article class="card"><h3>AI Memory</h3><p>Store what worked, what failed, why it worked and which account or audience it applied to.</p><button disabled>Awaiting data</button></article>
-    </section>
-    <footer><a href="/terms-of-service.html">Terms</a><a href="/privacy-policy.html">Privacy</a><span>© 2026 RAFDON AI</span></footer>
-  </main>`;
-
-const $ = (id) => document.getElementById(id);
-let creator = null;
-let selectedFile = null;
-function setProgress(message, error = false) { $('publish-progress').textContent = message; $('publish-progress').className = `progress ${error ? 'error' : ''}`; }
-function renderCreator(data) {
-  creator = data.creator; const c = creator;
-  $('creator-card').classList.remove('hidden');
-  $('creator-card').innerHTML = `<div><strong>${c.creator_nickname || 'TikTok creator'}</strong><span>@${c.creator_username || 'connected account'}</span></div><div>Max video: ${c.max_video_post_duration_sec || '—'} sec</div>`;
-  $('privacy').innerHTML = '<option value="">Select privacy status</option>' + (c.privacy_level_options || []).map((v) => `<option value="${v}">${v.replaceAll('_',' ')}</option>`).join('');
-  $('allow-comment').disabled = Boolean(c.comment_disabled); $('allow-duet').disabled = Boolean(c.duet_disabled); $('allow-stitch').disabled = Boolean(c.stitch_disabled);
-}
-async function refreshCreator() {
-  setProgress('Refreshing the latest TikTok creator settings…');
-  try { const data = await api({ action: 'creator-info' }); renderCreator(data); $('tiktok-status').textContent = `Connected: @${data.creator?.creator_username || 'TikTok'}`; setProgress('TikTok creator information is ready.'); }
-  catch (e) { $('tiktok-status').textContent = 'Not connected'; setProgress(e.message, true); }
-}
-async function uploadChunks(file, uploadUrl) {
-  const chunkSize = 10_000_000;
-  for (let start = 0; start < file.size; start += chunkSize) {
-    const end = Math.min(start + chunkSize, file.size); const chunk = file.slice(start, end);
-    const r = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'video/mp4', 'Content-Length': String(end - start), 'Content-Range': `bytes ${start}-${end - 1}/${file.size}` }, body: chunk });
-    if (!r.ok) throw new Error(`TikTok media upload failed at ${Math.round(end / file.size * 100)}%`);
-    setProgress(`Uploading video to TikTok… ${Math.round(end / file.size * 100)}%`);
-  }
-}
-async function submitVideo(mode) {
-  if (!selectedFile) return setProgress('Select a video first.', true);
-  if (!creator) await refreshCreator();
-  if (mode === 'direct' && !creator) return;
-  if (!$('consent').checked) return setProgress('Please confirm the TikTok Music Usage Confirmation before posting.', true);
-  if (mode === 'direct' && !$('privacy').value) return setProgress('Select a privacy status manually before posting.', true);
-  const maxDuration = Number(creator?.max_video_post_duration_sec || 0);
-  if (mode === 'direct' && selectedFile.duration && maxDuration && selectedFile.duration > maxDuration) return setProgress(`Video is ${selectedFile.duration.toFixed(1)}s, above TikTok's ${maxDuration}s limit for this creator.`, true);
-  setProgress('Preparing TikTok upload…');
-  try {
-    const data = await api({ action: 'init-post', mode, video_size: selectedFile.file.size, title: $('video-title').value.trim(), privacy_level: $('privacy').value, disable_comment: !$('allow-comment').checked, disable_duet: !$('allow-duet').checked, disable_stitch: !$('allow-stitch').checked, brand_organic_toggle: $('commercial').checked && $('brand-organic').checked, brand_content_toggle: $('commercial').checked && $('brand-content').checked, is_aigc: false });
-    if (!data.data?.upload_url || !data.data?.publish_id) throw new Error('TikTok did not return an upload URL.');
-    await uploadChunks(selectedFile.file, data.data.upload_url);
-    setProgress(mode === 'direct' ? 'Video uploaded. Checking publish status…' : 'Video uploaded to TikTok. Checking draft status…');
-    let last = null;
-    for (let i = 0; i < 8; i++) {
-      await new Promise((r) => setTimeout(r, 2500));
-      const status = await api({ action: 'status', publish_id: data.data.publish_id }); last = status.status;
-      setProgress(`TikTok status: ${status.status?.status || status.status?.publish_status || 'processing'}${status.status?.fail_reason ? ` — ${status.status.fail_reason}` : ''}`);
-      if (['PUBLISH_COMPLETE','SEND_TO_USER_INBOX','FAILED','ERROR'].includes(status.status?.status)) break;
-    }
-    if (last?.status === 'PUBLISH_COMPLETE') setProgress('Published to TikTok successfully. Unaudited clients may be restricted to private visibility.');
-    else if (last?.status === 'SEND_TO_USER_INBOX') setProgress('Draft uploaded to TikTok. Open the TikTok inbox notification to continue editing and post it.');
-    else setProgress(`TikTok is still processing. Publish ID: ${data.data.publish_id}`);
-  } catch (e) { setProgress(e.message, true); }
-}
-$('video-file').addEventListener('change', (event) => {
-  const file = event.target.files?.[0]; if (!file) return; const probe = document.createElement('video'); probe.preload = 'metadata';
-  probe.onloadedmetadata = () => { selectedFile = { file, duration: probe.duration }; URL.revokeObjectURL(probe.src); $('video-meta').textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB · ${probe.duration.toFixed(1)} sec`; }; probe.src = URL.createObjectURL(file);
-});
-$('commercial').addEventListener('change', () => $('commercial-options').classList.toggle('hidden', !$('commercial').checked));
-$('refresh-creator').addEventListener('click', refreshCreator); $('upload-draft').addEventListener('click', () => submitVideo('upload')); $('publish-direct').addEventListener('click', () => submitVideo('direct'));
-refreshCreator();
+const api = async (body) => { const r = await fetch(TIKTOK_POST,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const data=await r.json().catch(()=>({})); if(!r.ok||data.ok===false)throw new Error(data.error?.message||data.error||'TikTok request failed'); return data; };
+const accountCard=(a)=>{const connect=a.platform==='TikTok'?`<a class="button" href="${TIKTOK_AUTH}?account_id=${encodeURIComponent(a.id)}">Connect TikTok</a>`:`<button disabled>Coming after TikTok foundation</button>`;return `<div class="account-row"><div><b>${a.handle}</b><span>${a.platform} · ${a.role}</span></div>${connect}</div>`};
+const app=document.querySelector('#app');
+app.innerHTML=`<main class="shell"><header class="topbar"><div><span class="eyebrow">RAFDON AI</span><h1>Creator Revenue OS</h1><p>One command center for content, audience, LIVE and affiliate growth.</p></div><div class="status"><span></span> Foundation online</div></header><section class="hero-grid"><article class="hero"><span class="label">MASTER AGENT</span><h2>Observe → Analyze → Experiment → Learn</h2><p>Official platform data flows into one measurement and decision layer. Tokens stay server-side and are never exposed to the browser.</p></article><article class="card"><h3>Your accounts</h3>${accounts.map(accountCard).join('')}</article></section><section class="metrics">${[['Views','—'],['Followers','—'],['Engagement','—'],['Affiliate revenue','—']].map(([k,v])=>`<article class="metric"><span>${k}</span><strong>${v}</strong><small>Waiting for authorized platform sync</small></article>`).join('')}</section><section class="card tiktok-publisher" id="tiktok-publisher"><div class="publisher-head"><div><span class="label">TIKTOK CONTENT POSTING</span><h2>Post or upload a video to TikTok</h2><p>RAFDON AI sends the selected video only after you explicitly consent.</p></div><span id="tiktok-status" class="pill">Checking TikTok…</span></div><div id="creator-card" class="creator-card hidden"></div><div class="publisher-grid"><div><label>Video file</label><input id="video-file" type="file" accept="video/mp4,video/quicktime,video/webm"/><small id="video-meta">Select an MP4, MOV or WebM video.</small></div><div><label>Caption / title</label><textarea id="video-title" rows="3" maxlength="2200" placeholder="Write your TikTok caption…"></textarea></div><div><label>Privacy status <span class="required">required</span></label><select id="privacy"><option value="">Select privacy status</option></select></div><div><label>Interaction settings</label><div class="checks"><label><input id="allow-comment" type="checkbox"/> Allow comments</label><label><input id="allow-duet" type="checkbox"/> Allow Duet</label><label><input id="allow-stitch" type="checkbox"/> Allow Stitch</label></div></div><div class="disclosure"><label><input id="commercial" type="checkbox"/> This content promotes my own business or another brand</label><div id="commercial-options" class="checks hidden"><label><input id="brand-organic" type="checkbox"/> Your brand / own business</label><label><input id="brand-content" type="checkbox"/> Branded content / third party</label></div></div></div><div class="consent"><label><input id="consent" type="checkbox"/> By posting, you agree to TikTok's Music Usage Confirmation.</label></div><div class="publisher-actions"><button id="refresh-creator" class="button secondary">Refresh TikTok account</button><button id="upload-draft" class="button secondary">Upload draft to TikTok</button><button id="publish-direct" class="button primary">Publish to TikTok</button></div><div id="publish-progress" class="progress" aria-live="polite"></div></section><section class="grid"><article class="card"><h3>Content Intelligence</h3><p>Winning hooks, retention patterns, saves, shares, comments, follows and experiment results.</p><button disabled>Awaiting data</button></article><article class="card"><h3>Affiliate Engine</h3><p>Products → clicks → orders → commission → revenue attribution.</p><button disabled>Awaiting data</button></article><article class="card"><h3>LIVE Copilot</h3><p>Live-ready product priorities, audience questions and host recommendations where permitted data is available.</p><button disabled>Awaiting data</button></article><article class="card"><h3>AI Memory</h3><p>Store what worked, what failed, why it worked and which account or audience it applied to.</p><button disabled>Awaiting data</button></article></section><footer><a href="/terms-of-service.html">Terms</a><a href="/privacy-policy.html">Privacy</a><span>© 2026 RAFDON AI</span></footer></main>`;
+const $=id=>document.getElementById(id);let creator=null;let selectedFile=null;
+function setProgress(message,error=false){$('publish-progress').textContent=message;$('publish-progress').className=`progress ${error?'error':''}`;}
+function renderCreator(data){creator=data.creator;const c=creator;$('creator-card').classList.remove('hidden');$('creator-card').innerHTML=`<div><strong>${c.creator_nickname||'TikTok creator'}</strong><span>@${c.creator_username||'connected account'}</span></div><div>Max video: ${c.max_video_post_duration_sec||'—'} sec</div>`;$('privacy').innerHTML='<option value="">Select privacy status</option>'+(c.privacy_level_options||[]).map(v=>`<option value="${v}">${v.replaceAll('_',' ')}</option>`).join('');$('allow-comment').disabled=Boolean(c.comment_disabled);$('allow-duet').disabled=Boolean(c.duet_disabled);$('allow-stitch').disabled=Boolean(c.stitch_disabled);}
+async function refreshCreator(){setProgress('Refreshing the latest TikTok creator settings…');try{const data=await api({action:'creator-info'});renderCreator(data);$('tiktok-status').textContent=`Connected: @${data.creator?.creator_username||'TikTok'}`;setProgress('TikTok creator information is ready.');}catch(e){$('tiktok-status').textContent='Not connected';setProgress(e.message,true);}}
+async function uploadChunks(file,uploadUrl){const chunkSize=10000000;for(let start=0;start<file.size;start+=chunkSize){const end=Math.min(start+chunkSize,file.size);const chunk=file.slice(start,end);const r=await fetch(uploadUrl,{method:'PUT',headers:{'Content-Type':file.type||'video/mp4','Content-Range':`bytes ${start}-${end-1}/${file.size}`},body:chunk});if(!r.ok)throw new Error(`TikTok media upload failed at ${Math.round(end/file.size*100)}%`);setProgress(`Uploading video to TikTok… ${Math.round(end/file.size*100)}%`);}}
+async function submitVideo(mode){if(!selectedFile)return setProgress('Select a video first.',true);if(!creator)await refreshCreator();if(mode==='direct'&&!creator)return;if(!$('consent').checked)return setProgress("Please confirm the TikTok Music Usage Confirmation before posting.",true);if(mode==='direct'&&!$('privacy').value)return setProgress('Select a privacy status manually before posting.',true);const maxDuration=Number(creator?.max_video_post_duration_sec||0);if(mode==='direct'&&selectedFile.duration&&maxDuration&&selectedFile.duration>maxDuration)return setProgress(`Video is ${selectedFile.duration.toFixed(1)}s, above TikTok's ${maxDuration}s limit for this creator.`,true);setProgress('Preparing TikTok upload…');try{const data=await api({action:'init-post',mode,video_size:selectedFile.file.size,title:$('video-title').value.trim(),privacy_level:$('privacy').value,disable_comment:!$('allow-comment').checked,disable_duet:!$('allow-duet').checked,disable_stitch:!$('allow-stitch').checked,brand_organic_toggle:$('commercial').checked&&$('brand-organic').checked,brand_content_toggle:$('commercial').checked&&$('brand-content').checked,is_aigc:false});if(!data.data?.upload_url||!data.data?.publish_id)throw new Error('TikTok did not return an upload URL.');await uploadChunks(selectedFile.file,data.data.upload_url);setProgress(mode==='direct'?'Video uploaded. Checking publish status…':'Video uploaded to TikTok. Checking draft status…');let last=null;for(let i=0;i<8;i++){await new Promise(r=>setTimeout(r,2500));const status=await api({action:'status',publish_id:data.data.publish_id});last=status.status;setProgress(`TikTok status: ${status.status?.status||status.status?.publish_status||'processing'}${status.status?.fail_reason?` — ${status.status.fail_reason}`:''}`);if(['PUBLISH_COMPLETE','SEND_TO_USER_INBOX','FAILED','ERROR'].includes(status.status?.status))break;}if(last?.status==='PUBLISH_COMPLETE')setProgress('Published to TikTok successfully. Unaudited clients may be restricted to private visibility.');else if(last?.status==='SEND_TO_USER_INBOX')setProgress('Draft uploaded to TikTok. Open the TikTok inbox notification to continue editing and post it.');else setProgress(`TikTok is still processing. Publish ID: ${data.data.publish_id}`);}catch(e){setProgress(e.message,true);}}
+$('video-file').addEventListener('change',event=>{const file=event.target.files?.[0];if(!file)return;const probe=document.createElement('video');probe.preload='metadata';probe.onloadedmetadata=()=>{selectedFile={file,duration:probe.duration};URL.revokeObjectURL(probe.src);$('video-meta').textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB · ${probe.duration.toFixed(1)} sec`;};probe.src=URL.createObjectURL(file);});
+$('commercial').addEventListener('change',()=>$('commercial-options').classList.toggle('hidden',!$('commercial').checked));$('refresh-creator').addEventListener('click',refreshCreator);$('upload-draft').addEventListener('click',()=>submitVideo('upload'));$('publish-direct').addEventListener('click',()=>submitVideo('direct'));refreshCreator();
