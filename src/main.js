@@ -1,7 +1,7 @@
 import './styles.css';
 
 const TIKTOK_AUTH = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-auth/authorize';
-const TIKTOK_POST = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-post';
+const TIKTOK_POST = 'https://hkplxjugmhbrcafimkvl.supabase.co/functions/v1/rafdon-tiktok-post2';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_G7fRcb2SODd5IXV96mGlYw_HVjSEnZw';
 
 const accounts = [
@@ -48,41 +48,14 @@ app.innerHTML = `
       <div class="publisher-head"><div><span class="label">TIKTOK CONTENT POSTING</span><h2>Post or upload a video to TikTok</h2><p>RAFDON AI sends the selected video only after you explicitly consent.</p></div><span id="tiktok-status" class="pill">Checking TikTok…</span></div>
       <div id="creator-card" class="creator-card hidden"></div>
       <div class="publisher-grid">
-        <div>
-          <label>Video file</label>
-          <input id="video-file" type="file" accept="video/mp4,video/quicktime,video/webm" />
-          <small id="video-meta">Select an MP4, MOV or WebM video.</small>
-        </div>
-        <div>
-          <label>Caption / title</label>
-          <textarea id="video-title" rows="3" maxlength="2200" placeholder="Write your TikTok caption…"></textarea>
-        </div>
-        <div>
-          <label>Privacy status <span class="required">required</span></label>
-          <select id="privacy"><option value="">Select privacy status</option></select>
-        </div>
-        <div>
-          <label>Interaction settings</label>
-          <div class="checks">
-            <label><input id="allow-comment" type="checkbox" /> Allow comments</label>
-            <label><input id="allow-duet" type="checkbox" /> Allow Duet</label>
-            <label><input id="allow-stitch" type="checkbox" /> Allow Stitch</label>
-          </div>
-        </div>
-        <div class="disclosure">
-          <label><input id="commercial" type="checkbox" /> This content promotes my own business or another brand</label>
-          <div id="commercial-options" class="checks hidden">
-            <label><input id="brand-organic" type="checkbox" /> Your brand / own business</label>
-            <label><input id="brand-content" type="checkbox" /> Branded content / third party</label>
-          </div>
-        </div>
+        <div><label>Video file</label><input id="video-file" type="file" accept="video/mp4,video/quicktime,video/webm" /><small id="video-meta">Select an MP4, MOV or WebM video.</small></div>
+        <div><label>Caption / title</label><textarea id="video-title" rows="3" maxlength="2200" placeholder="Write your TikTok caption…"></textarea></div>
+        <div><label>Privacy status <span class="required">required</span></label><select id="privacy"><option value="">Select privacy status</option></select></div>
+        <div><label>Interaction settings</label><div class="checks"><label><input id="allow-comment" type="checkbox" /> Allow comments</label><label><input id="allow-duet" type="checkbox" /> Allow Duet</label><label><input id="allow-stitch" type="checkbox" /> Allow Stitch</label></div></div>
+        <div class="disclosure"><label><input id="commercial" type="checkbox" /> This content promotes my own business or another brand</label><div id="commercial-options" class="checks hidden"><label><input id="brand-organic" type="checkbox" /> Your brand / own business</label><label><input id="brand-content" type="checkbox" /> Branded content / third party</label></div></div>
       </div>
       <div class="consent"><label><input id="consent" type="checkbox" /> By posting, you agree to TikTok's Music Usage Confirmation.</label></div>
-      <div class="publisher-actions">
-        <button id="refresh-creator" class="button secondary">Refresh TikTok account</button>
-        <button id="upload-draft" class="button secondary">Upload draft to TikTok</button>
-        <button id="publish-direct" class="button primary">Publish to TikTok</button>
-      </div>
+      <div class="publisher-actions"><button id="refresh-creator" class="button secondary">Refresh TikTok account</button><button id="upload-draft" class="button secondary">Upload draft to TikTok</button><button id="publish-direct" class="button primary">Publish to TikTok</button></div>
       <div id="publish-progress" class="progress" aria-live="polite"></div>
     </section>
     <section class="grid">
@@ -97,51 +70,28 @@ app.innerHTML = `
 const $ = (id) => document.getElementById(id);
 let creator = null;
 let selectedFile = null;
-
-function setProgress(message, error = false) {
-  $('publish-progress').textContent = message;
-  $('publish-progress').className = `progress ${error ? 'error' : ''}`;
-}
-
+function setProgress(message, error = false) { $('publish-progress').textContent = message; $('publish-progress').className = `progress ${error ? 'error' : ''}`; }
 function renderCreator(data) {
-  creator = data.creator;
-  const c = creator;
+  creator = data.creator; const c = creator;
   $('creator-card').classList.remove('hidden');
   $('creator-card').innerHTML = `<div><strong>${c.creator_nickname || 'TikTok creator'}</strong><span>@${c.creator_username || 'connected account'}</span></div><div>Max video: ${c.max_video_post_duration_sec || '—'} sec</div>`;
-  const privacy = $('privacy');
-  privacy.innerHTML = '<option value="">Select privacy status</option>' + (c.privacy_level_options || []).map((v) => `<option value="${v}">${v.replaceAll('_',' ')}</option>`).join('');
-  $('allow-comment').disabled = Boolean(c.comment_disabled);
-  $('allow-duet').disabled = Boolean(c.duet_disabled);
-  $('allow-stitch').disabled = Boolean(c.stitch_disabled);
-  if (c.comment_disabled) $('allow-comment').checked = false;
-  if (c.duet_disabled) $('allow-duet').checked = false;
-  if (c.stitch_disabled) $('allow-stitch').checked = false;
+  $('privacy').innerHTML = '<option value="">Select privacy status</option>' + (c.privacy_level_options || []).map((v) => `<option value="${v}">${v.replaceAll('_',' ')}</option>`).join('');
+  $('allow-comment').disabled = Boolean(c.comment_disabled); $('allow-duet').disabled = Boolean(c.duet_disabled); $('allow-stitch').disabled = Boolean(c.stitch_disabled);
 }
-
 async function refreshCreator() {
   setProgress('Refreshing the latest TikTok creator settings…');
-  try {
-    const data = await api({ action: 'creator-info' });
-    renderCreator(data);
-    $('tiktok-status').textContent = `Connected: @${data.creator?.creator_username || 'TikTok'}`;
-    setProgress('TikTok creator information is ready.');
-  } catch (e) {
-    $('tiktok-status').textContent = 'Not connected';
-    setProgress(e.message, true);
-  }
+  try { const data = await api({ action: 'creator-info' }); renderCreator(data); $('tiktok-status').textContent = `Connected: @${data.creator?.creator_username || 'TikTok'}`; setProgress('TikTok creator information is ready.'); }
+  catch (e) { $('tiktok-status').textContent = 'Not connected'; setProgress(e.message, true); }
 }
-
 async function uploadChunks(file, uploadUrl) {
   const chunkSize = 10_000_000;
   for (let start = 0; start < file.size; start += chunkSize) {
-    const end = Math.min(start + chunkSize, file.size);
-    const chunk = file.slice(start, end);
+    const end = Math.min(start + chunkSize, file.size); const chunk = file.slice(start, end);
     const r = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'video/mp4', 'Content-Length': String(end - start), 'Content-Range': `bytes ${start}-${end - 1}/${file.size}` }, body: chunk });
     if (!r.ok) throw new Error(`TikTok media upload failed at ${Math.round(end / file.size * 100)}%`);
     setProgress(`Uploading video to TikTok… ${Math.round(end / file.size * 100)}%`);
   }
 }
-
 async function submitVideo(mode) {
   if (!selectedFile) return setProgress('Select a video first.', true);
   if (!creator) await refreshCreator();
@@ -152,48 +102,26 @@ async function submitVideo(mode) {
   if (mode === 'direct' && selectedFile.duration && maxDuration && selectedFile.duration > maxDuration) return setProgress(`Video is ${selectedFile.duration.toFixed(1)}s, above TikTok's ${maxDuration}s limit for this creator.`, true);
   setProgress('Preparing TikTok upload…');
   try {
-    const data = await api({
-      action: 'init-post', mode, video_size: selectedFile.file.size,
-      title: $('video-title').value.trim(), privacy_level: $('privacy').value,
-      disable_comment: !$('allow-comment').checked, disable_duet: !$('allow-duet').checked, disable_stitch: !$('allow-stitch').checked,
-      brand_organic_toggle: $('commercial').checked && $('brand-organic').checked,
-      brand_content_toggle: $('commercial').checked && $('brand-content').checked,
-      is_aigc: false,
-    });
+    const data = await api({ action: 'init-post', mode, video_size: selectedFile.file.size, title: $('video-title').value.trim(), privacy_level: $('privacy').value, disable_comment: !$('allow-comment').checked, disable_duet: !$('allow-duet').checked, disable_stitch: !$('allow-stitch').checked, brand_organic_toggle: $('commercial').checked && $('brand-organic').checked, brand_content_toggle: $('commercial').checked && $('brand-content').checked, is_aigc: false });
     if (!data.data?.upload_url || !data.data?.publish_id) throw new Error('TikTok did not return an upload URL.');
     await uploadChunks(selectedFile.file, data.data.upload_url);
     setProgress(mode === 'direct' ? 'Video uploaded. Checking publish status…' : 'Video uploaded to TikTok. Checking draft status…');
     let last = null;
     for (let i = 0; i < 8; i++) {
       await new Promise((r) => setTimeout(r, 2500));
-      const status = await api({ action: 'status', publish_id: data.data.publish_id });
-      last = status.status;
+      const status = await api({ action: 'status', publish_id: data.data.publish_id }); last = status.status;
       setProgress(`TikTok status: ${status.status?.status || status.status?.publish_status || 'processing'}${status.status?.fail_reason ? ` — ${status.status.fail_reason}` : ''}`);
       if (['PUBLISH_COMPLETE','SEND_TO_USER_INBOX','FAILED','ERROR'].includes(status.status?.status)) break;
     }
     if (last?.status === 'PUBLISH_COMPLETE') setProgress('Published to TikTok successfully. Unaudited clients may be restricted to private visibility.');
     else if (last?.status === 'SEND_TO_USER_INBOX') setProgress('Draft uploaded to TikTok. Open the TikTok inbox notification to continue editing and post it.');
     else setProgress(`TikTok is still processing. Publish ID: ${data.data.publish_id}`);
-  } catch (e) {
-    setProgress(e.message, true);
-  }
+  } catch (e) { setProgress(e.message, true); }
 }
-
 $('video-file').addEventListener('change', (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const probe = document.createElement('video');
-  probe.preload = 'metadata';
-  probe.onloadedmetadata = () => {
-    selectedFile = { file, duration: probe.duration };
-    URL.revokeObjectURL(probe.src);
-    $('video-meta').textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB · ${probe.duration.toFixed(1)} sec`;
-  };
-  probe.src = URL.createObjectURL(file);
+  const file = event.target.files?.[0]; if (!file) return; const probe = document.createElement('video'); probe.preload = 'metadata';
+  probe.onloadedmetadata = () => { selectedFile = { file, duration: probe.duration }; URL.revokeObjectURL(probe.src); $('video-meta').textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB · ${probe.duration.toFixed(1)} sec`; }; probe.src = URL.createObjectURL(file);
 });
 $('commercial').addEventListener('change', () => $('commercial-options').classList.toggle('hidden', !$('commercial').checked));
-$('refresh-creator').addEventListener('click', refreshCreator);
-$('upload-draft').addEventListener('click', () => submitVideo('upload'));
-$('publish-direct').addEventListener('click', () => submitVideo('direct'));
-
+$('refresh-creator').addEventListener('click', refreshCreator); $('upload-draft').addEventListener('click', () => submitVideo('upload')); $('publish-direct').addEventListener('click', () => submitVideo('direct'));
 refreshCreator();
